@@ -13,6 +13,7 @@ import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useSession } from "@/commons/context/session-context"
 import { checkAuthOptions, login, getMe } from "@/commons/api"
+import abcd_logo from "@/assets/abcd.png";
 
 function EmailForm({
   onSubmit,
@@ -143,7 +144,7 @@ export function LoginForm({
           <div className="relative hidden h-[500px] w-full overflow-hidden md:block">
             <div className="absolute inset-0 z-10 flex items-center justify-center">
               <img
-                src="/src/assets/abcd.png"
+                src={abcd_logo}
                 alt="Logo"
                 className="h-20 w-20 object-contain"
               />
