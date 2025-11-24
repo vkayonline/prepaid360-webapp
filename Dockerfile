@@ -15,6 +15,10 @@ RUN pnpm fetch
 # Copy source code
 COPY . .
 
+# Set environment for React build
+ARG PUBLIC_URL=/pp/
+ENV PUBLIC_URL=$PUBLIC_URL
+
 # Build application
 RUN pnpm install --offline && pnpm build
 
