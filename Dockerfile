@@ -20,7 +20,7 @@ ARG PUBLIC_URL=/pp/
 ENV PUBLIC_URL=$PUBLIC_URL
 
 # Build application
-RUN pnpm install --offline && PUBLIC_URL=${PUBLIC_URL} pnpm build
+RUN pnpm install --offline && pnpm build --base=${PUBLIC_URL}
 
 # 2. Runtime Stage - Nginx
 FROM nginx:stable-alpine AS runtime
