@@ -15,12 +15,12 @@ RUN pnpm fetch
 # Copy source code
 COPY . .
 
-# Set environment for React build
+# Set environment for React/Vite build
 ARG PUBLIC_URL=/pp/
 ENV PUBLIC_URL=$PUBLIC_URL
 
 # Build application
-RUN pnpm install --offline && pnpm build
+RUN pnpm install --offline && pnpm build -- --base=${PUBLIC_URL}
 
 # 2. Runtime Stage - Nginx
 FROM nginx:stable-alpine AS runtime
