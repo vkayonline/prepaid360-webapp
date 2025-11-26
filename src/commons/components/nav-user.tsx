@@ -21,6 +21,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/commons/components/ui/sidebar"
+import { logout as apiLogout } from "@/commons/api";
 
 export function NavUser({
   user,
@@ -35,40 +36,22 @@ export function NavUser({
   const navigate = useNavigate()
 
   const handleLogout = async () => {
+    const navigate = useNavigate(); // make sure this is inside a component
+  
     try {
-      const response = await fetch("http://localhost:8080/api/v1/auth/logout", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          device: {
-            deviceId: "",
-            deviceType: "",
-            manufacturer: "",
-            os: "",
-            osVersion: "",
-            appVersion: "",
-            ipAddress: "",
-            channel: "WEB",
-          },
-          payload: {},
-        }),
-      })
-
-      if (response.ok) {
-        setUser(null)
-        navigate("/login")
-      } else {
-        alert("Logout failed. Please try again.")
-      }
-    } catch (error) {
-      console.error("Logout error:", error)
-      alert("An unexpected error occurred during logout.")
+      // Call BaseClient via api wrapper
+      await apiLogout();
+  
+      // Clear user state (example)
+      setUser(null);
+  
+      // Navigate to login
+      navigate("/login");
+    } catch (error: any) {
+      console.error("Logout error:", error);
+      alert(error?.message || "An unexpected error occurred during logout.");
     }
-  }
-
+  };
   return (
     <SidebarMenu>
       <SidebarMenuItem>
