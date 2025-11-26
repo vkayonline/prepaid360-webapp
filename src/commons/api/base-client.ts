@@ -65,4 +65,35 @@ export class BaseClient {
 
         return json.data as T;
     }
+
+    static async get<T>(
+        endpoint: string,
+        options: ApiClientOptions = { handleAuthErrors: true }
+    ): Promise<T> {
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+        });
+    
+        if (!response.ok) {
+            if (response.status === 401 && options.handleAuthErrors) {
+                localStorage.removeItem("deviceId");
+                window.location.href = "/login";
+                throw new Error("Session expired. Redirecting to login.");
+            }
+            throw new Error(`HTTP Error: ${response.statusText}`);
+        }
+    
+        const json = await response.json();
+    
+        // ✅ Some endpoints (like actuator) do NOT return { success, data }
+        if (json?.success === false) {
+            throw new Error(json.description || "API error occurred.");
+        }
+    
+        // ✅ Return raw response for actuator compatibility
+        return (json.data ?? json) as T;
+    }
 }
+
