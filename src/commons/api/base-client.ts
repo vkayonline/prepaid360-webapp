@@ -68,9 +68,12 @@ export class BaseClient {
 
     static async get<T>(
         endpoint: string,
-        options: ApiClientOptions = { handleAuthErrors: true }
+        options: ApiClientOptions = { handleAuthErrors: true },
+        baseUrl?: string // ✅ optional override
     ): Promise<T> {
-        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        const url = `${baseUrl ?? API_BASE_URL}${endpoint}`;
+    
+        const response = await fetch(url, {
             method: "GET",
             headers: { "Content-Type": "application/json" },
             credentials: "include",
@@ -95,5 +98,6 @@ export class BaseClient {
         // ✅ Return raw response for actuator compatibility
         return (json.data ?? json) as T;
     }
+    
 }
 
