@@ -7,7 +7,7 @@ import React, {
   ReactNode,
   useEffect,
 } from "react";
-import { checkHealth } from "@/commons/api"; // ✅ adjust path if needed
+import { checkHealth } from "@/commons/api"; // adjust path if needed
 
 type HealthStatus = "CHECKING" | "UP" | "DOWN";
 
@@ -23,9 +23,10 @@ export function HealthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const checkHealthStatus = async () => {
       try {
-        const response = await checkHealth(); // ✅ Uses BaseClient now
+        const response = await checkHealth(); // BaseClient.get
 
-        if (response?.data?.status === "UP") {
+        // ✅ Use response directly, not response.data
+        if (response?.status === "UP") {
           setStatus("UP");
         } else {
           setStatus("DOWN");
@@ -36,8 +37,11 @@ export function HealthProvider({ children }: { children: ReactNode }) {
       }
     };
 
-    checkHealthStatus(); // ✅ Initial check
-    const interval = setInterval(checkHealthStatus, 60000); // ✅ Every 60s
+    // Initial check
+    checkHealthStatus();
+
+    // Repeat every 60 seconds
+    const interval = setInterval(checkHealthStatus, 60000);
 
     return () => clearInterval(interval);
   }, []);
