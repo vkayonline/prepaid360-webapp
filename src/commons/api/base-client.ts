@@ -1,7 +1,7 @@
 import { v4 as uuidv4 } from "uuid";
 import { UAParser } from "ua-parser-js";
 
-const API_BASE_URL = "http://localhost:8080/api/v1";
+const API_BASE_URL = "/api/v1";
 
 function getDeviceId() {
     let deviceId = localStorage.getItem("deviceId");
