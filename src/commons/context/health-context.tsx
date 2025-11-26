@@ -1,6 +1,13 @@
-"use client"
+"use client";
 
-import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  ReactNode,
+  useEffect,
+} from "react";
+import { checkHealth } from "@/commons/api"; // ✅ adjust path if needed
 
 type HealthStatus = "CHECKING" | "UP" | "DOWN";
 
@@ -14,19 +21,12 @@ export function HealthProvider({ children }: { children: ReactNode }) {
   const [status, setStatus] = useState<HealthStatus>("CHECKING");
 
   useEffect(() => {
-    const checkHealth = async () => {
+    const checkHealthStatus = async () => {
       try {
-        // We assume a simple GET request is enough for a health check.
-        // This doesn't need our special apiClient as it's a GET and has no payload.
-        const response = await fetch("http://localhost:8080/api/actuator/health");
-        if (response.ok) {
-          const data = await response.json();
-          // Spring Actuator returns {"status":"UP"}
-          if (data.status === "UP") {
-            setStatus("UP");
-          } else {
-            setStatus("DOWN");
-          }
+        const response = await checkHealth(); // ✅ Uses BaseClient now
+
+        if (response?.data?.status === "UP") {
+          setStatus("UP");
         } else {
           setStatus("DOWN");
         }
@@ -36,8 +36,8 @@ export function HealthProvider({ children }: { children: ReactNode }) {
       }
     };
 
-    checkHealth(); // Initial check
-    const interval = setInterval(checkHealth, 60000); // Check every 60 seconds
+    checkHealthStatus(); // ✅ Initial check
+    const interval = setInterval(checkHealthStatus, 60000); // ✅ Every 60s
 
     return () => clearInterval(interval);
   }, []);
