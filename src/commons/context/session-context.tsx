@@ -39,8 +39,8 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const hasPermission = (permission: string) => {
-    return user?.permissions.includes(permission) ?? false;
-  };
+    return user?.permissions?.some(p => p.code === permission) ?? false;
+};
 
   return (
     <SessionContext.Provider value={{ user, setUser, hasPermission, loading }}>

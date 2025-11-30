@@ -1,13 +1,16 @@
 import { BaseClient } from "../base-client";
 
 export const checkAuthOptions = (email: string) =>
-    BaseClient.post("/auth/options", { email });
+    BaseClient.post("/v1/auth/options", { email });
 
 export const login = (email: string, password: string) =>
-    BaseClient.post("/auth/login", { email, password });
+    BaseClient.post("/v1/auth/login", { email, password });
 
 export const logout = () =>
-    BaseClient.post("/auth/logout", {});
+    BaseClient.post("/v1/auth/logout", {});
 
 export const getMe = () =>
-    BaseClient.post("/auth/me", {}, { handleAuthErrors: false });
+    BaseClient.post("/v1/auth/me", {}, { handleAuthErrors: false });
+
+export const refreshSession = () =>
+    BaseClient.post("/v1/auth/refresh", {});

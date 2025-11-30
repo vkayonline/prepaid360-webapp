@@ -1,7 +1,8 @@
 import { v4 as uuidv4 } from "uuid";
 import { UAParser } from "ua-parser-js";
 
-const API_BASE_URL = "/pp/api/v1";
+// Load from Vite env
+const API_BASE_URL: string = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:9080/api";
 
 function getDeviceId() {
     let deviceId = localStorage.getItem("deviceId");
@@ -17,11 +18,28 @@ export interface ApiClientOptions {
 }
 
 export class BaseClient {
+
+    // -----------------------------------------
+    // 🔹 Shared error handling
+    // -----------------------------------------
+    private static handleError(response: Response, options: ApiClientOptions) {
+        if (response.status === 401 && options.handleAuthErrors) {
+            localStorage.removeItem("deviceId");
+            window.location.href = "/login";
+            throw new Error("Session expired. Redirecting to login.");
+        }
+        throw new Error(`HTTP Error: ${response.statusText}`);
+    }
+
+    // -----------------------------------------
+    // 🔹 POST with JSON
+    // -----------------------------------------
     static async post<T>(
         endpoint: string,
         payload: any,
         options: ApiClientOptions = { handleAuthErrors: true }
     ): Promise<T> {
+
         const parser = new UAParser();
         const result = parser.getResult();
 
@@ -35,8 +53,6 @@ export class BaseClient {
                 appVersion: "0.0.0",
                 ipAddress: "",
                 channel: "WEB",
-                browser: result.browser.name || "Unknown",
-                browserVersion: result.browser.version || "Unknown",
             },
             payload,
         };
@@ -48,56 +64,62 @@ export class BaseClient {
             body: JSON.stringify(fullPayload),
         });
 
-        if (!response.ok) {
-            if (response.status === 401 && options.handleAuthErrors) {
-                localStorage.removeItem("deviceId");
-                window.location.href = "/login";
-                throw new Error("Session expired. Redirecting to login.");
-            }
-            throw new Error(`HTTP Error: ${response.statusText}`);
-        }
+        if (!response.ok) this.handleError(response, options);
 
         const json = await response.json();
-
-        if (!json.success) {
-            throw new Error(json.description || "API error occurred.");
-        }
+        if (!json.success) throw new Error(json.description || "API error occurred.");
 
         return json.data as T;
     }
 
+    // -----------------------------------------
+    // 🔹 GET (No baseUrl override anymore)
+    // -----------------------------------------
     static async get<T>(
         endpoint: string,
-        options: ApiClientOptions = { handleAuthErrors: true },
-        baseUrl?: string // ✅ optional override
+        options: ApiClientOptions = { handleAuthErrors: true }
     ): Promise<T> {
-        const url = `${baseUrl ?? API_BASE_URL}${endpoint}`;
-    
-        const response = await fetch(url, {
+
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
             method: "GET",
             headers: { "Content-Type": "application/json" },
             credentials: "include",
         });
-    
-        if (!response.ok) {
-            if (response.status === 401 && options.handleAuthErrors) {
-                localStorage.removeItem("deviceId");
-                window.location.href = "/login";
-                throw new Error("Session expired. Redirecting to login.");
-            }
-            throw new Error(`HTTP Error: ${response.statusText}`);
-        }
-    
+
+        if (!response.ok) this.handleError(response, options);
+
         const json = await response.json();
-    
-        // ✅ Some endpoints (like actuator) do NOT return { success, data }
+
         if (json?.success === false) {
             throw new Error(json.description || "API error occurred.");
         }
-    
-        // ✅ Return raw response for actuator compatibility
+
         return (json.data ?? json) as T;
     }
-    
-}
 
+    // -----------------------------------------
+    // 🔹 Multipart File Upload
+    // -----------------------------------------
+    static async upload<T>(
+        endpoint: string,
+        files: File[],
+        options: ApiClientOptions = { handleAuthErrors: true }
+    ): Promise<T> {
+
+        const formData = new FormData();
+        files.forEach((f) => formData.append("file", f));
+
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+            method: "POST",
+            credentials: "include",
+            body: formData,
+        });
+
+        if (!response.ok) this.handleError(response, options);
+
+        const json = await response.json();
+        if (!json.success) throw new Error(json.description || "File upload failed");
+
+        return json.data as T;
+    }
+}

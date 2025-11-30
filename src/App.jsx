@@ -4,26 +4,26 @@ import {
   Route,
   Navigate,
   Outlet,
-} from "react-router-dom"
-import { SessionProvider } from "@/commons/context/session-context"
-import { HealthProvider } from "@/commons/context/health-context"
-import { Layout } from "@/commons/components/layout"
-import { ProtectedRoute } from "@/commons/components/protected-route"
-import { HealthCheck } from "@/commons/components/health-check"
-import LoginPage from "@/features/auth/login-page.tsx"
-import DashboardPage from "@/features/dashboard/dashboard-page.tsx"
-import CreateApplicationPage from "@/features/applications/create-application.tsx"
-import ViewApplicationsPage from "@/features/applications/view-applications.tsx"
-import BatchDetailsPage from "@/features/applications/batch-details-page.tsx"
-import ApplicationDetailsPage from "@/features/applications/application-details-page.tsx"
-import NotFoundPage from "@/features/error/not-found-page.tsx"
+} from "react-router-dom";
+import { SessionProvider } from "@/commons/context/session-context";
+import { HealthProvider } from "@/commons/context/health-context";
+import { Layout } from "@/commons/components/layout";
+import { ProtectedRoute } from "@/commons/components/protected-route";
+import { HealthCheck } from "@/commons/components/health-check";
+import LoginPage from "@/features/auth/login-page";
+import DashboardPage from "@/features/dashboard/dashboard-page";
+import CreateApplicationPage from "@/features/applications/create-application";
+import ViewApplicationsPage from "@/features/applications/view-applications";
+import BatchDetailsPage from "@/features/applications/batch-details-page";
+import ApplicationDetailsPage from "@/features/applications/application-details-page";
+import NotFoundPage from "@/features/error/not-found-page";
 
 function AppLayout() {
   return (
     <Layout>
       <Outlet />
     </Layout>
-  )
+  );
 }
 
 function App() {
@@ -32,25 +32,37 @@ function App() {
       <SessionProvider>
         <HealthProvider>
           <Routes>
-            <Route path="/login" element={<LoginPage />} />
             <Route element={<HealthCheck />}>
+              <Route path="/" element={<Navigate to="/login" />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="*" element={<NotFoundPage />} />
               <Route element={<ProtectedRoute />}>
                 <Route element={<AppLayout />}>
                   <Route path="/dashboard" element={<DashboardPage />} />
-                  <Route path="/applications" element={<ViewApplicationsPage />} />
-                  <Route path="/applications/create" element={<CreateApplicationPage />} />
-                  <Route path="/applications/:batchId" element={<BatchDetailsPage />} />
-                  <Route path="/applications/:batchId/:applicationId" element={<ApplicationDetailsPage />} />
+                  <Route
+                    path="/applications"
+                    element={<ViewApplicationsPage />}
+                  />
+                  <Route
+                    path="/applications/create"
+                    element={<CreateApplicationPage />}
+                  />
+                  <Route
+                    path="/applications/:batchId"
+                    element={<BatchDetailsPage />}
+                  />
+                  <Route
+                    path="/applications/:batchId/:applicationId"
+                    element={<ApplicationDetailsPage />}
+                  />
                 </Route>
               </Route>
             </Route>
-            <Route path="/" element={<Navigate to="/login" />} />
-            <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </HealthProvider>
       </SessionProvider>
     </Router>
-  )
+  );
 }
 
-export default App
+export default App;

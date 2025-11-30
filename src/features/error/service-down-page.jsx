@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { ServerCrash } from "lucide-react";
 
@@ -10,7 +10,9 @@ export default function ServiceDownPage() {
       <p className="text-xl mt-4 text-muted-foreground">
         We're experiencing some technical difficulties and our team is working hard to get things back up and running.
       </p>
-      <p className="mt-2 text-muted-foreground">Please try again in a few moments.</p>
+      <p className="mt-2 text-muted-foreground">
+        Please try again in a few moments.
+      </p>
     </div>
   );
 }

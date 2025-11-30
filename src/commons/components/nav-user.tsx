@@ -23,35 +23,22 @@ import {
 } from "@/commons/components/ui/sidebar"
 import { logout as apiLogout } from "@/commons/api";
 
-export function NavUser({
-  user,
-}: {
-  user: {
-    "full-name": string
-    email: string
-  }
-}) {
+export function NavUser({ user }) {
   const { isMobile } = useSidebar()
   const { setUser } = useSession()
-  const navigate = useNavigate()
+  const navigate = useNavigate()    // ✅ Correct place
 
   const handleLogout = async () => {
-    const navigate = useNavigate(); // make sure this is inside a component
-  
     try {
-      // Call BaseClient via api wrapper
-      await apiLogout();
-  
-      // Clear user state (example)
-      setUser(null);
-  
-      // Navigate to login
-      navigate("/login");
+      await apiLogout();    // Call backend logout
+      setUser(null);        // Clear session
+      navigate("/login");   // Redirect
     } catch (error: any) {
       console.error("Logout error:", error);
       alert(error?.message || "An unexpected error occurred during logout.");
     }
   };
+
   return (
     <SidebarMenu>
       <SidebarMenuItem>

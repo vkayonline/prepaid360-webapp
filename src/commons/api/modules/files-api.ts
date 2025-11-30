@@ -1,4 +1,4 @@
-import { MultipartClient } from "../multipart-client";
+import { BaseClient } from "../base-client";
 
 export const uploadFile = (file: File) =>
-    MultipartClient.upload("/files/upload", [file]);
+    BaseClient.upload("/v1/files/upload", [file]);

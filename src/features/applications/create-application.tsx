@@ -67,23 +67,28 @@ function CommonFields({
             </div>
             <div className="space-y-2">
                 <Label>Card Type</Label>
-                <RadioGroup name="cardType" value={cardType} onValueChange={setCardType} className="flex gap-4"
-                            disabled={disabled}>
-                    <div className="flex items-center space-x-2"><RadioGroupItem value="VIRTUAL" id="virtual" /><Label
-                        htmlFor="virtual">Virtual</Label></div>
-                    <div className="flex items-center space-x-2"><RadioGroupItem value="PHYSICAL" id="physical" /><Label
-                        htmlFor="physical">Physical</Label></div>
+                <RadioGroup name="cardType" value={cardType} onValueChange={setCardType} className="flex gap-4" disabled={disabled}>
+                    <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="VIRTUAL" id="virtual" />
+                        <Label htmlFor="virtual">Virtual</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="PHYSICAL" id="physical" />
+                        <Label htmlFor="physical">Physical</Label>
+                    </div>
                 </RadioGroup>
             </div>
             <div className="space-y-2">
                 <Label>Emboss Type</Label>
-                <RadioGroup name="embossType" value={embossType} onValueChange={setEmbossType} className="flex gap-4"
-                            disabled={disabled}>
-                    <div className="flex items-center space-x-2"><RadioGroupItem value="Perso" id="perso" /><Label
-                        htmlFor="perso">Perso</Label></div>
-                    <div className="flex items-center space-x-2"><RadioGroupItem value="Non Perso"
-                                                                                 id="non-perso" /><Label
-                        htmlFor="non-perso">Non Perso</Label></div>
+                <RadioGroup name="embossType" value={embossType} onValueChange={setEmbossType} className="flex gap-4" disabled={disabled}>
+                    <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="PERSONALIZED" id="perso" />
+                        <Label htmlFor="perso">Perso</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="NON_PERSONALIZED" id="non-perso" />
+                        <Label htmlFor="non-perso">Non Perso</Label>
+                    </div>
                 </RadioGroup>
             </div>
         </div>
@@ -158,7 +163,7 @@ export default function CreateApplicationPage() {
     const [reviewData, setReviewData] = useState<any>(null)
 
     const [cardType, setCardType] = useState("VIRTUAL")
-    const [embossType, setEmbossType] = useState("Perso")
+    const [embossType, setEmbossType] = useState("PERSONALIZED")
     const [corporatesData, setCorporatesData] = useState<any[]>([])
     const [selectedCorp, setSelectedCorp] = useState<any>(null)
     const [products, setProducts] = useState<any[]>([])
@@ -224,12 +229,10 @@ export default function CreateApplicationPage() {
         setSingleFormData(data) // Save form data for review
 
         const payload = {
-            corpId: selectedCorp?.id,
-            productId: selectedProduct?.id,
-            productName: selectedProduct?.productName,
+            corporateCode: selectedCorp?.corporateCode,
+            productCode: selectedProduct?.productCode,
             cardType: cardType,
             embossType: embossType,
-            plasticCode: "PLS001",
             application: {
                 kitNumber: data.kitNumber,
                 name: data.name,
@@ -292,12 +295,10 @@ export default function CreateApplicationPage() {
         }
 
         const payload = {
-            corpId: selectedCorp?.id,
-            productId: selectedProduct?.id,
-            productName: selectedProduct?.productName,
+            corporateCode: selectedCorp?.corporateCode,
+            productCode: selectedProduct?.productCode,
             cardType,
             embossType,
-            plasticCode: "PLS001",
             application: null,
             filePath: uploadedFilePath,
         };
@@ -492,7 +493,7 @@ export default function CreateApplicationPage() {
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <div className="space-y-2">
                                     <Label htmlFor="kitNumber">Kit Number</Label>
-                                    <Input id="kitNumber" name="kitNumber" placeholder="KIT123456" disabled={embossType === "Perso"} defaultValue={singleFormData?.kitNumber ?? ''} />
+                                    <Input id="kitNumber" name="kitNumber" placeholder="KIT123456" disabled={embossType === "PERSONALIZED"} defaultValue={singleFormData?.kitNumber ?? ''} />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="name">Name</Label>
