@@ -18,6 +18,8 @@ COPY . .
 # Set environment for React/Vite build
 ARG PUBLIC_URL=/pp/
 ENV PUBLIC_URL=$PUBLIC_URL
+ARG API_BASE_URL=/pp/api
+ENV VITE_API_BASE_URL=$API_BASE_URL
 
 # Build application
 RUN pnpm install --offline && pnpm build --base=${PUBLIC_URL}
