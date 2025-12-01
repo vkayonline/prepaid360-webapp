@@ -1,6 +1,6 @@
 import { BadgeCheck, ChevronsUpDown, LogOut } from "lucide-react"
 import { useNavigate } from "react-router-dom"
-import { useSession } from "@/commons/context/session-context"
+import { useSessionStore } from "@/commons/store/session"
 import {
   Avatar,
   AvatarFallback,
@@ -25,7 +25,7 @@ import { logout as apiLogout } from "@/commons/api";
 
 export function NavUser({ user }) {
   const { isMobile } = useSidebar()
-  const { setUser } = useSession()
+  const setUser = useSessionStore((state) => state.setUser)
   const navigate = useNavigate()    // ✅ Correct place
 
   const handleLogout = async () => {

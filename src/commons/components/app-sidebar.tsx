@@ -3,7 +3,7 @@
 import * as React from "react"
 import { Frame, PieChart } from "lucide-react"
 
-import { useSession } from "@/commons/context/session-context"
+import { useSessionStore } from "@/commons/store/session"
 import { NavMain } from "@/commons/components/nav-main"
 import { NavUser } from "@/commons/components/nav-user"
 import {
@@ -15,7 +15,7 @@ import {
 } from "@/commons/components/ui/sidebar"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { user, hasPermission } = useSession()
+  const { user, hasPermission } = useSessionStore()
 
   const navMain = []
 

@@ -20,8 +20,8 @@ export default function ApplicationDetailsPage() {
       setIsLoading(true)
       try {
         const data = await getApplicationDetails(parseInt(applicationId));
-        if (data.content.length > 0) {
-            setApplicationData(data.content[0])
+        if (data !== null && data !== undefined) {
+            setApplicationData(data)
         } else {
             console.error("Application not found");
         }

@@ -5,7 +5,8 @@ import {
   Navigate,
   Outlet,
 } from "react-router-dom";
-import { SessionProvider } from "@/commons/context/session-context";
+import { useEffect } from "react";
+import { useSessionStore } from "@/commons/store/session";
 import { HealthProvider } from "@/commons/context/health-context";
 import { Layout } from "@/commons/components/layout";
 import { ProtectedRoute } from "@/commons/components/protected-route";
@@ -27,40 +28,44 @@ function AppLayout() {
 }
 
 function App() {
+  const checkSession = useSessionStore((state) => state.checkSession);
+
+  useEffect(() => {
+    checkSession();
+  }, [checkSession]);
+
   return (
     <Router basename={import.meta.env.BASE_URL}>
-      <SessionProvider>
-        <HealthProvider>
-          <Routes>
-            <Route element={<HealthCheck />}>
-              <Route path="/" element={<Navigate to="/login" />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="*" element={<NotFoundPage />} />
-              <Route element={<ProtectedRoute />}>
-                <Route element={<AppLayout />}>
-                  <Route path="/dashboard" element={<DashboardPage />} />
-                  <Route
-                    path="/applications"
-                    element={<ViewApplicationsPage />}
-                  />
-                  <Route
-                    path="/applications/create"
-                    element={<CreateApplicationPage />}
-                  />
-                  <Route
-                    path="/applications/:batchId"
-                    element={<BatchDetailsPage />}
-                  />
-                  <Route
-                    path="/applications/:batchId/:applicationId"
-                    element={<ApplicationDetailsPage />}
-                  />
-                </Route>
+      <HealthProvider>
+        <Routes>
+          <Route element={<HealthCheck />}>
+            <Route path="/" element={<Navigate to="/login" />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="*" element={<NotFoundPage />} />
+            <Route element={<ProtectedRoute />}>
+              <Route element={<AppLayout />}>
+                <Route path="/dashboard" element={<DashboardPage />} />
+                <Route
+                  path="/applications"
+                  element={<ViewApplicationsPage />}
+                />
+                <Route
+                  path="/applications/create"
+                  element={<CreateApplicationPage />}
+                />
+                <Route
+                  path="/applications/:batchId"
+                  element={<BatchDetailsPage />}
+                />
+                <Route
+                  path="/applications/:batchId/:applicationId"
+                  element={<ApplicationDetailsPage />}
+                />
               </Route>
             </Route>
-          </Routes>
-        </HealthProvider>
-      </SessionProvider>
+          </Route>
+        </Routes>
+      </HealthProvider>
     </Router>
   );
 }

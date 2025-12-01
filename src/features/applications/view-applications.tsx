@@ -13,9 +13,21 @@ import { listApplicationBatches } from "@/commons/api"
 
 const statusVariantMap: { [key: string]: "default" | "secondary" | "destructive" | "outline" | "success" | "warning" } = {
   "APPROVED": "success",
-  "PENDING": "warning",
+  "PENDING_APPROVAL": "warning",
+  "ISSUANCE_IN_PROGRESS": "outline",
+  "PARTIALLY_ISSUED": "outline",
+  "ISSUED": "success",
+  "ISSUANCE_FAILED": "destructive",
   "REJECTED": "destructive",
-}
+  "CANCELED": "destructive",
+  "PENDING": "warning",
+};
+
+const statusFilterMap: { [key: string]: string } = {
+  PENDING: "PENDING_APPROVAL",
+  APPROVED: "APPROVED,ISSUANCE_IN_PROGRESS,PARTIALLY_ISSUED,ISSUED,ISSUANCE_FAILED",
+  REJECTED: "REJECTED,CANCELED",
+};
 
 function ApplicationsTable({ applications, isLoading, pagination }: { applications: any[], isLoading: boolean, pagination: any }) {
   if (isLoading) {
@@ -113,7 +125,8 @@ export default function ViewApplicationsPage() {
       }
     }
 
-    fetchApplications(activeTab)
+    const statusQuery = statusFilterMap[activeTab];
+    fetchApplications(statusQuery)
   }, [activeTab])
 
   return (

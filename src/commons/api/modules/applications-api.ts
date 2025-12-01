@@ -21,11 +21,11 @@ export const listApplicationsInBatch = (batchId: number, page: number, size: num
     });
 
 export const getApplicationDetails = (id: number) =>
-    BaseClient.post("/v1/application/list", { applicationId: id });
+    BaseClient.post("/v1/application/fetch", { applicationId: id });
 
 export const approveOrRejectBatch = (
     batchId: number,
-    action: "APPROVE" | "REJECT",
+    action: "APPROVE" | "REJECT" | "CANCEL",
     reason: string
 ) =>
     BaseClient.post("/v1/application/batch/action", {

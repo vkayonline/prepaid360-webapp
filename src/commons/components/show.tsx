@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { useSession } from "@/commons/context/session-context";
+import { useSessionStore } from "@/commons/store/session";
 
 interface ShowProps {
   permission: string | string[];
@@ -8,7 +8,7 @@ interface ShowProps {
 }
 
 export function Show({ permission, children, fallback = null }: ShowProps) {
-  const { hasPermission } = useSession();
+  const hasPermission = useSessionStore((state) => state.hasPermission);
 
   const checkPermissions = () => {
     if (Array.isArray(permission)) {

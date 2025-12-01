@@ -33,9 +33,10 @@ export default function BatchDetailsPage() {
     const [applications, setApplications] = useState<any[]>([])
     const [pagination, setPagination] = useState<any>({})
     const [isLoading, setIsLoading] = useState(true)
-    const [dialogAction, setDialogAction] = useState<"approve" | "reject" | null>(null)
+    const [dialogAction, setDialogAction] = useState<"approve" | "reject" | "cancel" | null>(null)
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [rejectionReason, setRejectionReason] = useState("")
+    const [cancelReason, setCancelReason] = useState("")
 
     useEffect(() => {
         if (!batchId) return;
@@ -65,7 +66,7 @@ export default function BatchDetailsPage() {
         fetchApplications()
     }, [batchId])
 
-    const openConfirmationDialog = (action: "approve" | "reject") => {
+    const openConfirmationDialog = (action: "approve" | "reject" | "cancel") => {
         setDialogAction(action)
         setIsDialogOpen(true)
     }
@@ -74,6 +75,7 @@ export default function BatchDetailsPage() {
         setIsDialogOpen(false)
         setTimeout(() => {
             setRejectionReason("")
+            setCancelReason("")
         }, 200)
     }
 
@@ -94,6 +96,16 @@ export default function BatchDetailsPage() {
             window.location.reload();
         } catch (err: any) {
             alert(err?.message || "Rejection failed");
+        }
+    };
+
+    const handleCancel = async () => {
+        try {
+            await approveOrRejectBatch(Number(batchId), "CANCEL", cancelReason);
+            handleDialogClose();
+            window.location.reload();
+        } catch (err: any) {
+            alert(err?.message || "Cancellation failed");
         }
     };
 
@@ -120,6 +132,13 @@ export default function BatchDetailsPage() {
                                     className="w-32">
                                 <XCircle className="mr-2 h-4 w-4"/>
                                 Reject
+                            </Button>
+                        </Show>
+                        <Show permission="applications.cancel">
+                            <Button onClick={() => openConfirmationDialog("cancel")} variant="destructive"
+                                    className="w-32">
+                                <XCircle className="mr-2 h-4 w-4"/>
+                                Cancel
                             </Button>
                         </Show>
                     </div>
@@ -212,13 +231,13 @@ export default function BatchDetailsPage() {
                             <div className="flex items-center">
                                 <AlertTriangle
                                     className={`mr-2 h-6 w-6 ${dialogAction === 'approve' ? 'text-yellow-500' : 'text-red-500'}`}/>
-                                {dialogAction === 'approve' ? 'Confirm Approval' : 'Confirm Rejection'}
+                                {dialogAction === 'approve' ? 'Confirm Approval' : dialogAction === 'reject' ? 'Confirm Rejection' : 'Confirm Cancellation'}
                             </div>
                         </DialogTitle>
                         <DialogDescription>
                             {dialogAction === 'approve'
                                 ? 'Are you sure you want to approve this batch? This action cannot be undone.'
-                                : 'Please provide a reason for rejecting this batch. This action cannot be undone.'}
+                                : dialogAction === 'reject' ? 'Please provide a reason for rejecting this batch. This action cannot be undone.' : 'Please provide a reason for cancelling this batch. This action cannot be undone.'}
                         </DialogDescription>
                     </DialogHeader>
                     {dialogAction === 'reject' && (
@@ -230,15 +249,28 @@ export default function BatchDetailsPage() {
                             />
                         </div>
                     )}
+                    {dialogAction === 'cancel' && (
+                        <div className="py-4">
+                            <Textarea
+                                placeholder="Enter cancellation reason..."
+                                value={cancelReason}
+                                onChange={(e) => setCancelReason(e.target.value)}
+                            />
+                        </div>
+                    )}
                     <DialogFooter>
                         <Button variant="outline" onClick={handleDialogClose}>Cancel</Button>
                         {dialogAction === 'approve' ? (
                             <Button onClick={handleApprove} variant="success">
                                 Yes, Approve
                             </Button>
-                        ) : (
+                        ) : dialogAction === 'reject' ? (
                             <Button onClick={handleReject} variant="destructive" disabled={!rejectionReason}>
                                 Yes, Reject
+                            </Button>
+                        ) : (
+                            <Button onClick={handleCancel} variant="destructive" disabled={!cancelReason}>
+                                Yes, Cancel
                             </Button>
                         )}
                     </DialogFooter>
@@ -247,3 +279,4 @@ export default function BatchDetailsPage() {
         </>
     )
 }
+

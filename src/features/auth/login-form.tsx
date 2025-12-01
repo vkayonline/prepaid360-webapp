@@ -11,7 +11,7 @@ import { Input } from "@/commons/components/ui/input"
 import { Ripple } from "@/commons/components/ui/ripple.jsx"
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { useSession } from "@/commons/context/session-context"
+import { useSessionStore } from "@/commons/store/session"
 import { checkAuthOptions, login, getMe } from "@/commons/api"
 import abcd_logo from "@/assets/abcd.png";
 
@@ -106,7 +106,7 @@ export function LoginForm({
   const [step, setStep] = useState<"email" | "password">("email")
   const [email, setEmail] = useState("")
   const navigate = useNavigate()
-  const { setUser } = useSession()
+  const setUser = useSessionStore((state) => state.setUser)
 
   const handleEmailSubmit = async () => {
     try {
