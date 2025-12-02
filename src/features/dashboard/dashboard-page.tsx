@@ -108,9 +108,13 @@ export default function DashboardPage() {
                     recentApplications.map((app) => (
                         <TableRow key={app.batchId}>
                         <TableCell className="font-medium">
-                            <Link to={`/applications/${app.batchId}`} className="text-primary hover:underline">
+                          <Link
+                            to={`/applications/${app.batchId}`}
+                            state={{ batchStatus: app.status }}
+                            className="text-primary hover:underline"
+                          >
                             {app.batchId}
-                            </Link>
+                          </Link>
                         </TableCell>
                         <TableCell>{app.productName}</TableCell>
                         <TableCell>{app.totalRecords}</TableCell>

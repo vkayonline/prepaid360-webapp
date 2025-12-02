@@ -56,7 +56,11 @@ function ApplicationsTable({ applications, isLoading, pagination }: { applicatio
             applications.map((app) => (
               <TableRow key={app.batchId}>
                 <TableCell className="font-medium">
-                  <Link to={`/applications/${app.batchId}`} className="text-primary hover:underline">
+                  <Link
+                    to={`/applications/${app.batchId}`}
+                    state={{ batchStatus: app.status }}
+                    className="text-primary hover:underline"
+                  >
                     {app.batchId}
                   </Link>
                 </TableCell>
