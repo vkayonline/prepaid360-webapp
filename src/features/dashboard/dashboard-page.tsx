@@ -7,8 +7,9 @@ import { Button } from "@/commons/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/commons/components/ui/table"
 import { Badge } from "@/commons/components/ui/badge"
 import { ArrowUpRight, IndianRupee, Clock, PlusCircle } from "lucide-react"
-import { listApplicationBatches } from "@/commons/api"
+import { listApplicationBatches, getCorporateBalance } from "@/commons/api"
 import { Skeleton } from "@/commons/components/ui/skeleton"
+import { useSessionStore } from "@/commons/store/session"
 
 const statusVariantMap: { [key: string]: "default" | "secondary" | "destructive" | "outline" | "success" | "warning" } = {
   "APPROVED": "success",
@@ -17,14 +18,26 @@ const statusVariantMap: { [key: string]: "default" | "secondary" | "destructive"
 }
 
 export default function DashboardPage() {
-  const [stats, setStats] = useState({ balance: "5,231.89", pendingCount: 0 })
+  const { selectedCorporate } = useSessionStore()
+  const [stats, setStats] = useState({ balance: "0.00", pendingCount: 0 })
   const [recentApplications, setRecentApplications] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     const fetchDashboardData = async () => {
+      if (!selectedCorporate) return;
+
       setIsLoading(true)
       try {
+        // Fetch Balance
+        try {
+          const balanceData = await getCorporateBalance(selectedCorporate.id);
+          setStats(prev => ({ ...prev, balance: balanceData.availableBalance?.toLocaleString('en-IN', { minimumFractionDigits: 2 }) || "0.00" }));
+        } catch (e) {
+          console.error("Failed to fetch balance", e);
+          setStats(prev => ({ ...prev, balance: "Error" }));
+        }
+
         const pendingData = await listApplicationBatches("PENDING", 0, 1);
         setStats(prev => ({ ...prev, pendingCount: pendingData.totalElements || 0 }))
 
@@ -38,7 +51,7 @@ export default function DashboardPage() {
       }
     }
     fetchDashboardData()
-  }, [])
+  }, [selectedCorporate])
 
   return (
     <div className="flex flex-col gap-8">
@@ -51,7 +64,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             {isLoading ? <Skeleton className="h-8 w-3/4" /> : <div className="text-2xl font-bold">₹{stats.balance}</div>}
-            <p className="text-xs text-muted-foreground">+20.1% from last month</p>
+            <p className="text-xs text-muted-foreground">Available Limit</p>
           </CardContent>
         </Card>
         <Card>
@@ -65,16 +78,16 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
         <Card className="flex flex-col">
-           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">New Application</CardTitle>
-             <PlusCircle className="h-4 w-4 text-muted-foreground" />
+            <PlusCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent className="flex-grow flex flex-col justify-center items-center">
-             <Button asChild className="w-full">
-                <Link to="/applications/create">
-                    Create New Application
-                    <ArrowUpRight className="ml-2 h-4 w-4" />
-                </Link>
+            <Button asChild className="w-full">
+              <Link to="/applications/create">
+                Create New Application
+                <ArrowUpRight className="ml-2 h-4 w-4" />
+              </Link>
             </Button>
           </CardContent>
         </Card>
@@ -82,35 +95,35 @@ export default function DashboardPage() {
 
       {/* Bottom Row: Large Card for Recent Applications */}
       <div className="grid grid-cols-1">
-         <Card>
-            <CardHeader>
+        <Card>
+          <CardHeader>
             <CardTitle>Recent Applications</CardTitle>
-            </CardHeader>
-            <CardContent>
+          </CardHeader>
+          <CardContent>
             {isLoading ? (
-                <div className="space-y-2">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                    <Skeleton key={i} className="h-12 w-full" />
-                    ))}
-                </div>
+              <div className="space-y-2">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <Skeleton key={i} className="h-12 w-full" />
+                ))}
+              </div>
             ) : (
-                <Table>
+              <Table>
                 <TableHeader>
-                    <TableRow>
+                  <TableRow>
                     <TableHead>Batch ID</TableHead>
                     <TableHead>Product Name</TableHead>
                     <TableHead>Total Records</TableHead>
                     <TableHead>Status</TableHead>
-                    </TableRow>
+                  </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {recentApplications.length > 0 ? (
+                  {recentApplications.length > 0 ? (
                     recentApplications.map((app) => (
-                        <TableRow key={app.batchId}>
+                      <TableRow key={app.batchId}>
                         <TableCell className="font-medium">
                           <Link
                             to={`/applications/${app.batchId}`}
-                            state={{ batchStatus: app.status }}
+                            state={{ batchStatus: app.status, batchData: app }}
                             className="text-primary hover:underline"
                           >
                             {app.batchId}
@@ -119,23 +132,23 @@ export default function DashboardPage() {
                         <TableCell>{app.productName}</TableCell>
                         <TableCell>{app.totalRecords}</TableCell>
                         <TableCell>
-                            <Badge variant={statusVariantMap[app.status] || "default"}>
+                          <Badge variant={statusVariantMap[app.status] || "default"}>
                             {app.status}
-                            </Badge>
+                          </Badge>
                         </TableCell>
-                        </TableRow>
+                      </TableRow>
                     ))
-                    ) : (
+                  ) : (
                     <TableRow>
-                        <TableCell colSpan={4} className="text-center">
+                      <TableCell colSpan={4} className="text-center">
                         No recent applications found.
-                        </TableCell>
+                      </TableCell>
                     </TableRow>
-                    )}
+                  )}
                 </TableBody>
-                </Table>
+              </Table>
             )}
-            </CardContent>
+          </CardContent>
         </Card>
       </div>
     </div>

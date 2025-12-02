@@ -12,7 +12,8 @@ import { Label } from "@/commons/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/commons/components/ui/radio-group"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/commons/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/commons/components/ui/tabs";
-import { createApplication, listCorporates, uploadFile, validateApplication } from "@/commons/api";
+import { createApplication, listCorporateProducts, uploadFile, validateApplication } from "@/commons/api";
+import { useSessionStore } from "@/commons/store/session";
 
 // NOTE: This file was cleaned and fixed to ensure upload only happens once and to
 // prevent validating while upload is in progress. Parent upload handler performs
@@ -21,18 +22,18 @@ import { createApplication, listCorporates, uploadFile, validateApplication } fr
 // --- Reusable Components ---
 
 function CommonFields({
-                          cardType,
-                          setCardType,
-                          embossType,
-                          setEmbossType,
-                          corporates,
-                          selectedCorp,
-                          setSelectedCorp,
-                          products,
-                          selectedProduct,
-                          setSelectedProduct,
-                          disabled = false
-                      }: {
+    cardType,
+    setCardType,
+    embossType,
+    setEmbossType,
+    corporates,
+    selectedCorp,
+    setSelectedCorp,
+    products,
+    selectedProduct,
+    setSelectedProduct,
+    disabled = false
+}: {
     cardType: string;
     setCardType: (v: string) => void;
     embossType: string;
@@ -49,22 +50,28 @@ function CommonFields({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
                 <Label>Corporate</Label>
-                <Select onValueChange={(value) => setSelectedCorp(corporates.find(c => c.id.toString() === value))}
-                        defaultValue={selectedCorp?.id?.toString()} disabled={disabled}>
-                    <SelectTrigger><SelectValue placeholder="Select a corporate" /></SelectTrigger>
-                    <SelectContent>{corporates.map((corp) => <SelectItem key={corp.id}
-                                                                         value={corp.id.toString()}>{corp.corporateName}</SelectItem>)}</SelectContent>
+                <Select value={selectedCorp?.id?.toString() || ""} disabled={true}>
+                    <SelectTrigger>
+                        <SelectValue placeholder={selectedCorp?.name || "Select a corporate"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {corporates.map((corp) => (
+                            <SelectItem key={corp.id} value={corp.id.toString()}>
+                                {corp.name}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
                 </Select>
             </div>
             <div className="space-y-2">
                 <Label>Product</Label>
                 <Select onValueChange={(value) => setSelectedProduct(products.find(p => p.id.toString() === value))}
-                        defaultValue={selectedProduct?.id?.toString()} disabled={disabled || !selectedCorp}>
+                    defaultValue={selectedProduct?.id?.toString()} disabled={disabled || !selectedCorp}>
                     <SelectTrigger><SelectValue placeholder="Select a product" /></SelectTrigger>
                     <SelectContent>{products.map((prod) => <SelectItem key={prod.id}
-                                                                       value={prod.id.toString()}>{prod.productName}</SelectItem>)}</SelectContent>
-                </Select>
-            </div>
+                        value={prod.id.toString()}>{prod.productName}</SelectItem>)}</SelectContent>
+                </Select >
+            </div >
             <div className="space-y-2">
                 <Label>Card Type</Label>
                 <RadioGroup name="cardType" value={cardType} onValueChange={setCardType} className="flex gap-4" disabled={disabled}>
@@ -91,17 +98,17 @@ function CommonFields({
                     </div>
                 </RadioGroup>
             </div>
-        </div>
+        </div >
     )
 }
 
 function FileUpload({
-                        file,
-                        setFile,
-                        onFileSelect,
-                        uploadStatus,
-                        disabled = false
-                    }: {
+    file,
+    setFile,
+    onFileSelect,
+    uploadStatus,
+    disabled = false
+}: {
     file: File | null,
     setFile: (file: File | null) => void,
     onFileSelect: (file: File) => void,
@@ -150,8 +157,8 @@ function FileUpload({
                 className="font-semibold text-primary">Click to upload</span> or drag and drop</p>
             <p className="text-xs text-muted-foreground">CSV, XLS, or XLSX up to 10MB</p>
             <Input id="bulkFile" type="file" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                   onChange={handleFileChange} disabled={disabled}
-                   accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" />
+                onChange={handleFileChange} disabled={disabled}
+                accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" />
         </div>
     )
 }
@@ -159,6 +166,7 @@ function FileUpload({
 // --- Main Page Component ---
 
 export default function CreateApplicationPage() {
+    const { selectedCorporate } = useSessionStore();
     const [view, setView] = useState<'form' | 'review' | 'submitted'>('form')
     const [reviewData, setReviewData] = useState<any>(null)
 
@@ -178,24 +186,28 @@ export default function CreateApplicationPage() {
     const [activeTab, setActiveTab] = useState("bulk");
 
     useEffect(() => {
-        const fetchCorporates = async () => {
-            try {
-                const data = await listCorporates();
-                setCorporatesData(data.filter((corp: any) => corp.status === 'ACTIVE'))
-            } catch (err) {
-                setError("Failed to fetch corporates. Please try again later.");
-            }
+        if (selectedCorporate) {
+            setCorporatesData([selectedCorporate]);
+            setSelectedCorp(selectedCorporate);
         }
-        fetchCorporates()
-    }, [])
+    }, [selectedCorporate]);
 
     useEffect(() => {
-        if (selectedCorp) {
-            setProducts(selectedCorp.products?.filter((prod: any) => prod.status === 'ACTIVE') ?? [])
-            setSelectedProduct(null)
-        } else {
-            setProducts([])
+        const fetchProducts = async () => {
+            if (selectedCorp) {
+                try {
+                    const data = await listCorporateProducts(selectedCorp.id);
+                    setProducts(data.filter((prod: any) => prod.status === 'ACTIVE') ?? [])
+                    setSelectedProduct(null)
+                } catch (err) {
+                    console.error("Failed to fetch products", err);
+                    setProducts([]);
+                }
+            } else {
+                setProducts([])
+            }
         }
+        fetchProducts();
     }, [selectedCorp])
 
     const handleValidation = async (payload: any) => {
@@ -229,7 +241,7 @@ export default function CreateApplicationPage() {
         setSingleFormData(data) // Save form data for review
 
         const payload = {
-            corporateCode: selectedCorp?.corporateCode,
+            corporateCode: selectedCorp?.code,
             productCode: selectedProduct?.productCode,
             cardType: cardType,
             embossType: embossType,
@@ -295,7 +307,7 @@ export default function CreateApplicationPage() {
         }
 
         const payload = {
-            corporateCode: selectedCorp?.corporateCode,
+            corporateCode: selectedCorp?.code,
             productCode: selectedProduct?.productCode,
             cardType,
             embossType,
@@ -451,10 +463,10 @@ export default function CreateApplicationPage() {
                     <TabsContent value="bulk">
                         <div className="space-y-8 mt-4">
                             <CommonFields cardType={cardType} setCardType={setCardType} embossType={embossType}
-                                          setEmbossType={setEmbossType} corporates={corporatesData}
-                                          selectedCorp={selectedCorp} setSelectedCorp={setSelectedCorp}
-                                          products={products} selectedProduct={selectedProduct}
-                                          setSelectedProduct={setSelectedProduct} disabled={uploadStatus === 'uploading'} />
+                                setEmbossType={setEmbossType} corporates={corporatesData}
+                                selectedCorp={selectedCorp} setSelectedCorp={setSelectedCorp}
+                                products={products} selectedProduct={selectedProduct}
+                                setSelectedProduct={setSelectedProduct} disabled={uploadStatus === 'uploading'} />
                             <div className="space-y-2"><Label>Upload File</Label>
                                 <FileUpload
                                     file={bulkFile}
@@ -473,7 +485,7 @@ export default function CreateApplicationPage() {
                             </div>
                             <div className="flex justify-between items-center">
                                 <Button type="button" variant="outline"
-                                        onClick={handleDownloadSample} disabled={isLoading || uploadStatus === 'uploading'}>Download Sample</Button>
+                                    onClick={handleDownloadSample} disabled={isLoading || uploadStatus === 'uploading'}>Download Sample</Button>
                                 <Button type="button" onClick={handleBulkSubmit} disabled={
                                     isLoading ||
                                     uploadStatus === "uploading" || // prevent validation mid-upload
@@ -485,10 +497,10 @@ export default function CreateApplicationPage() {
                     <TabsContent value="single">
                         <form onSubmit={handleSingleSubmit} className="space-y-8 mt-4">
                             <CommonFields cardType={cardType} setCardType={setCardType} embossType={embossType}
-                                          setEmbossType={setEmbossType} corporates={corporatesData}
-                                          selectedCorp={selectedCorp} setSelectedCorp={setSelectedCorp}
-                                          products={products} selectedProduct={selectedProduct}
-                                          setSelectedProduct={setSelectedProduct} />
+                                setEmbossType={setEmbossType} corporates={corporatesData}
+                                selectedCorp={selectedCorp} setSelectedCorp={setSelectedCorp}
+                                products={products} selectedProduct={selectedProduct}
+                                setSelectedProduct={setSelectedProduct} />
                             <h3 className="text-lg font-medium border-t pt-4">Application Details</h3>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <div className="space-y-2">
@@ -532,7 +544,7 @@ export default function CreateApplicationPage() {
                                         <div className="space-y-2 md:col-span-2">
                                             <Label htmlFor="addressLine1">Address Line 1</Label>
                                             <Input id="addressLine1" name="addressLine1"
-                                                   placeholder="No 12, ABC Street" defaultValue={singleFormData?.addressLine1 ?? ''} />
+                                                placeholder="No 12, ABC Street" defaultValue={singleFormData?.addressLine1 ?? ''} />
                                         </div>
                                         <div className="space-y-2">
                                             <Label htmlFor="addressLine2">Address Line 2</Label>

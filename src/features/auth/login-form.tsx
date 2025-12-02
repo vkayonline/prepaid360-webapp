@@ -107,6 +107,7 @@ export function LoginForm({
   const [email, setEmail] = useState("")
   const navigate = useNavigate()
   const setUser = useSessionStore((state) => state.setUser)
+  const checkSession = useSessionStore((state) => state.checkSession)
 
   const handleEmailSubmit = async () => {
     try {
@@ -127,8 +128,8 @@ export function LoginForm({
   const handlePasswordSubmit = async (password: string) => {
     try {
       await login(email, password);
-      const userData = await getMe();
-      setUser(userData);
+      await login(email, password);
+      await checkSession();
       navigate("/dashboard");
     } catch (error: any) {
       console.error("Login error:", error)

@@ -14,6 +14,8 @@ import {
   SidebarRail,
 } from "@/commons/components/ui/sidebar"
 
+import { CorporateSwitcher } from "@/commons/components/corporate-switcher"
+
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user, hasPermission } = useSessionStore()
 
@@ -54,12 +56,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <div className="flex items-center gap-2 p-2">
-{/*          <img src="/src/assets/abcd.png" alt="Logo" className="h-8 w-8" />*/}
-          <span className="text-lg font-semibold opacity-100 transition-opacity duration-300 group-data-[state=collapsed]:opacity-0">
-            Prepaid360
-          </span>
-        </div>
+        {user?.corporates && user.corporates.length > 1 ? (
+          <CorporateSwitcher />
+        ) : (
+          <div className="flex items-center gap-2 p-2">
+            {/* <img src="/src/assets/abcd.png" alt="Logo" className="h-8 w-8" /> */}
+            <span className="text-lg font-semibold opacity-100 transition-opacity duration-300 group-data-[state=collapsed]:opacity-0">
+              Prepaid360
+            </span>
+          </div>
+        )}
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={navMain} />

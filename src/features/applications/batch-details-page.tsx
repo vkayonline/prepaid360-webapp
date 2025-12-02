@@ -37,17 +37,17 @@ import {
   XCircle,
 } from "lucide-react";
 import { Skeleton } from "@/commons/components/ui/skeleton";
-import { approveOrRejectBatch, listApplicationsInBatch } from "@/commons/api";
+import { approveOrRejectBatch, listApplicationsInBatch, getBatchDetails } from "@/commons/api";
 import { Show } from "@/commons/components/show";
 
 const statusVariantMap: {
   [key: string]:
-    | "default"
-    | "secondary"
-    | "destructive"
-    | "outline"
-    | "success"
-    | "warning";
+  | "default"
+  | "secondary"
+  | "destructive"
+  | "outline"
+  | "success"
+  | "warning";
 } = {
   SUCCESS: "success",
   PENDING: "warning",
@@ -67,7 +67,7 @@ export default function BatchDetailsPage() {
   const [cancelReason, setCancelReason] = useState("");
 
   const location = useLocation();
-  const { batchStatus } = location.state || {};
+  const { batchStatus, batchData } = location.state || {};
 
   useEffect(() => {
     if (!batchId) return;
@@ -100,6 +100,38 @@ export default function BatchDetailsPage() {
 
     fetchApplications();
   }, [batchId]);
+
+  // Separate effect for batch details to avoid re-fetching applications unnecessarily
+  useEffect(() => {
+    if (!batchId || batchData) return;
+
+    const fetchBatchData = async () => {
+      try {
+        const data = await getBatchDetails(parseInt(batchId));
+        if (data) {
+          // Update location state so it persists for child navigation
+          // Note: We can't easily update location.state without navigating, 
+          // but we can store it in a local state variable if we were using one.
+          // However, since we use `batchData` from `location.state` directly in the render,
+          // we need a way to trigger a re-render with the new data.
+          // The best way is to use a local state for batchData that initializes from location.state
+          setLocalBatchData(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch batch details:", error);
+      }
+    }
+    fetchBatchData();
+  }, [batchId, batchData]);
+
+  const [localBatchData, setLocalBatchData] = useState<any>(batchData || null);
+
+  // Sync localBatchData if location.state changes (though unlikely without navigation)
+  useEffect(() => {
+    if (batchData) {
+      setLocalBatchData(batchData);
+    }
+  }, [batchData]);
 
   const openConfirmationDialog = (action: "approve" | "reject" | "cancel") => {
     setDialogAction(action);
@@ -223,6 +255,7 @@ export default function BatchDetailsPage() {
                         <TableCell className="font-medium">
                           <Link
                             to={`/applications/${batchId}/${app.id}`}
+                            state={{ batchData: localBatchData }}
                             className="text-primary hover:underline"
                           >
                             {app.id}
@@ -308,25 +341,24 @@ export default function BatchDetailsPage() {
             <DialogTitle>
               <div className="flex items-center">
                 <AlertTriangle
-                  className={`mr-2 h-6 w-6 ${
-                    dialogAction === "approve"
-                      ? "text-yellow-500"
-                      : "text-red-500"
-                  }`}
+                  className={`mr-2 h-6 w-6 ${dialogAction === "approve"
+                    ? "text-yellow-500"
+                    : "text-red-500"
+                    }`}
                 />
                 {dialogAction === "approve"
                   ? "Confirm Approval"
                   : dialogAction === "reject"
-                  ? "Confirm Rejection"
-                  : "Confirm Cancellation"}
+                    ? "Confirm Rejection"
+                    : "Confirm Cancellation"}
               </div>
             </DialogTitle>
             <DialogDescription>
               {dialogAction === "approve"
                 ? "Are you sure you want to approve this batch? This action cannot be undone."
                 : dialogAction === "reject"
-                ? "Please provide a reason for rejecting this batch. This action cannot be undone."
-                : "Please provide a reason for cancelling this batch. This action cannot be undone."}
+                  ? "Please provide a reason for rejecting this batch. This action cannot be undone."
+                  : "Please provide a reason for cancelling this batch. This action cannot be undone."}
             </DialogDescription>
           </DialogHeader>
           {dialogAction === "reject" && (

@@ -58,7 +58,7 @@ function ApplicationsTable({ applications, isLoading, pagination }: { applicatio
                 <TableCell className="font-medium">
                   <Link
                     to={`/applications/${app.batchId}`}
-                    state={{ batchStatus: app.status }}
+                    state={{ batchStatus: app.status, batchData: app }}
                     className="text-primary hover:underline"
                   >
                     {app.batchId}

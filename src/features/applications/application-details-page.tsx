@@ -1,17 +1,19 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useParams } from "react-router-dom"
+import { useParams, useLocation } from "react-router-dom"
 import { Card, CardContent, CardHeader, CardTitle } from "@/commons/components/ui/card"
 import { Input } from "@/commons/components/ui/input"
 import { Label } from "@/commons/components/ui/label"
 import { Skeleton } from "@/commons/components/ui/skeleton"
-import { getApplicationDetails } from "@/commons/api"
+import { getApplicationDetails, getBatchDetails } from "@/commons/api"
+import { useSessionStore } from "@/commons/store/session"
 
 export default function ApplicationDetailsPage() {
-  const { applicationId } = useParams<{ applicationId: string }>()
+  const { batchId, applicationId } = useParams<{ batchId: string, applicationId: string }>()
   const [applicationData, setApplicationData] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const selectedCorporate = useSessionStore((state) => state.selectedCorporate);
 
   useEffect(() => {
     if (!applicationId) return;
@@ -21,9 +23,9 @@ export default function ApplicationDetailsPage() {
       try {
         const data = await getApplicationDetails(parseInt(applicationId));
         if (data !== null && data !== undefined) {
-            setApplicationData(data)
+          setApplicationData(data)
         } else {
-            console.error("Application not found");
+          console.error("Application not found");
         }
       } catch (error) {
         console.error("Failed to fetch application details:", error)
@@ -34,6 +36,31 @@ export default function ApplicationDetailsPage() {
 
     fetchApplicationDetails()
   }, [applicationId])
+
+  const location = useLocation();
+  const { batchData } = location.state || {};
+  const [localBatchData, setLocalBatchData] = useState<any>(batchData || null);
+
+  useEffect(() => {
+    if (batchData) {
+      setLocalBatchData(batchData);
+      return;
+    }
+
+    if (batchId && !localBatchData) {
+      const fetchBatchData = async () => {
+        try {
+          const data = await getBatchDetails(parseInt(batchId));
+          if (data) {
+            setLocalBatchData(data);
+          }
+        } catch (error) {
+          console.error("Failed to fetch batch details:", error);
+        }
+      }
+      fetchBatchData();
+    }
+  }, [batchId, batchData, localBatchData]);
 
   if (isLoading) {
     return (
@@ -46,7 +73,7 @@ export default function ApplicationDetailsPage() {
             <Skeleton className="h-12 w-full" />
             <Skeleton className="h-12 w-full" />
           </div>
-           <div className="space-y-4">
+          <div className="space-y-4">
             <Skeleton className="h-12 w-full" />
             <Skeleton className="h-12 w-full" />
           </div>
@@ -54,24 +81,28 @@ export default function ApplicationDetailsPage() {
       </Card>
     )
   }
-  
+
   if (!applicationData) {
-     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Application Not Found</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <p>The requested application with ID "{applicationId}" could not be found.</p>
-            </CardContent>
-        </Card>
-     )
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Application Not Found</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p>The requested application with ID "{applicationId}" could not be found.</p>
+        </CardContent>
+      </Card>
+    )
   }
 
   // For display purposes, we can reconstruct a similar structure to what the form expects
   const data = {
     ...applicationData,
-    application: applicationData // The details are at the top level in the response
+    application: applicationData, // The details are at the top level in the response
+    corpId: localBatchData?.corporateCode || localBatchData?.corporateName || selectedCorporate?.code || 'N/A',
+    productName: localBatchData?.productName || 'N/A',
+    cardType: localBatchData?.cardType || 'N/A',
+    embossType: localBatchData?.embossType || 'N/A'
   }
 
   return (
