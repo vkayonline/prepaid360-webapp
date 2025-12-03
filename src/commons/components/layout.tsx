@@ -13,6 +13,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/commons/components/ui/sidebar"
+import { Toaster } from "@/commons/components/ui/toaster"
 import React from "react"
 import { Link, useLocation } from "react-router-dom"
 
@@ -76,6 +77,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <main className="flex flex-1 flex-col gap-4 p-4 pt-0">
           {children}
         </main>
+        <Toaster />
       </SidebarInset>
     </SidebarProvider>
   )

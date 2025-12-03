@@ -17,6 +17,20 @@ export interface ApiClientOptions {
     handleAuthErrors?: boolean;
 }
 
+// -----------------------------------------
+// 🔹 ApiError Class
+// -----------------------------------------
+
+export class ApiError extends Error {
+    response: any;
+
+    constructor(response: any) {
+        super(response.description || "API error occurred.");
+        this.name = "ApiError";
+        this.response = response;
+    }
+}
+
 export class BaseClient {
 
     // -----------------------------------------
@@ -67,7 +81,7 @@ export class BaseClient {
         if (!response.ok) this.handleError(response, options);
 
         const json = await response.json();
-        if (!json.success) throw new Error(json.description || "API error occurred.");
+        if (!json.success) throw new ApiError(json);
 
         return json.data as T;
     }
@@ -91,7 +105,7 @@ export class BaseClient {
         const json = await response.json();
 
         if (json?.success === false) {
-            throw new Error(json.description || "API error occurred.");
+            throw new ApiError(json);
         }
 
         return (json.data ?? json) as T;
@@ -118,7 +132,29 @@ export class BaseClient {
         if (!response.ok) this.handleError(response, options);
 
         const json = await response.json();
-        if (!json.success) throw new Error(json.description || "File upload failed");
+        if (!json.success) throw new ApiError(json);
+
+        return json.data as T;
+    }
+    // -----------------------------------------
+    // 🔹 POST with FormData
+    // -----------------------------------------
+    static async postFormData<T>(
+        endpoint: string,
+        formData: FormData,
+        options: ApiClientOptions = { handleAuthErrors: true }
+    ): Promise<T> {
+
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+            method: "POST",
+            credentials: "include",
+            body: formData,
+        });
+
+        if (!response.ok) this.handleError(response, options);
+
+        const json = await response.json();
+        if (!json.success) throw new ApiError(json);
 
         return json.data as T;
     }

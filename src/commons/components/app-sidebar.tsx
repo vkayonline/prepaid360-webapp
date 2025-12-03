@@ -35,6 +35,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       title: "Create Application",
       url: "/applications/create",
     })
+    applicationItems.push({
+      title: "Create Application (New)",
+      url: "/applications/create-new",
+    })
   }
   if (hasPermission("applications.view")) {
     applicationItems.push({

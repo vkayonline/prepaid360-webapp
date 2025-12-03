@@ -17,6 +17,8 @@ import CreateApplicationPage from "@/features/applications/create-application";
 import ViewApplicationsPage from "@/features/applications/view-applications";
 import BatchDetailsPage from "@/features/applications/batch-details-page";
 import ApplicationDetailsPage from "@/features/applications/application-details-page";
+import StagingUploadPage from "@/features/applications/staging-upload-page";
+import StagingStatusPage from "@/features/applications/staging-status-page";
 import NotFoundPage from "@/features/error/not-found-page";
 
 function AppLayout() {
@@ -60,6 +62,14 @@ function App() {
                 <Route
                   path="/applications/:batchId/:applicationId"
                   element={<ApplicationDetailsPage />}
+                />
+                <Route
+                  path="/applications/create-new"
+                  element={<StagingUploadPage />}
+                />
+                <Route
+                  path="/applications/staging/:stagingBatchId"
+                  element={<StagingStatusPage />}
                 />
               </Route>
             </Route>
