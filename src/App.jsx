@@ -13,12 +13,12 @@ import { ProtectedRoute } from "@/commons/components/protected-route";
 import { HealthCheck } from "@/commons/components/health-check";
 import LoginPage from "@/features/auth/login-page";
 import DashboardPage from "@/features/dashboard/dashboard-page";
-import CreateApplicationPage from "@/features/applications/create-application";
 import ViewApplicationsPage from "@/features/applications/view-applications";
 import BatchDetailsPage from "@/features/applications/batch-details-page";
 import ApplicationDetailsPage from "@/features/applications/application-details-page";
 import StagingUploadPage from "@/features/applications/staging-upload-page";
 import StagingStatusPage from "@/features/applications/staging-status-page";
+
 import NotFoundPage from "@/features/error/not-found-page";
 
 function AppLayout() {
@@ -52,10 +52,6 @@ function App() {
                   element={<ViewApplicationsPage />}
                 />
                 <Route
-                  path="/applications/create"
-                  element={<CreateApplicationPage />}
-                />
-                <Route
                   path="/applications/:batchId"
                   element={<BatchDetailsPage />}
                 />
@@ -64,13 +60,14 @@ function App() {
                   element={<ApplicationDetailsPage />}
                 />
                 <Route
-                  path="/applications/create-new"
+                  path="/applications/create"
                   element={<StagingUploadPage />}
                 />
                 <Route
                   path="/applications/staging/:stagingBatchId"
                   element={<StagingStatusPage />}
                 />
+
               </Route>
             </Route>
           </Route>

@@ -87,6 +87,62 @@ export class BaseClient {
     }
 
     // -----------------------------------------
+    // 🔹 POST expecting Blob (File Download)
+    // -----------------------------------------
+    static async postBlob(
+        endpoint: string,
+        payload: any,
+        options: ApiClientOptions = { handleAuthErrors: true }
+    ): Promise<Blob> {
+
+        const parser = new UAParser();
+        const result = parser.getResult();
+
+        const fullPayload = {
+            device: {
+                deviceId: getDeviceId(),
+                deviceType: result.device.type || "desktop",
+                manufacturer: result.device.vendor || "Unknown",
+                os: result.os.name || "Unknown",
+                osVersion: result.os.version || "Unknown",
+                appVersion: "0.0.0",
+                ipAddress: "",
+                channel: "WEB",
+            },
+            payload,
+        };
+
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify(fullPayload),
+        });
+
+        if (!response.ok) this.handleError(response, options);
+
+        return await response.blob();
+    }
+
+    // -----------------------------------------
+    // 🔹 GET expecting Blob (File Download)
+    // -----------------------------------------
+    static async downloadBlob(
+        endpoint: string,
+        options: ApiClientOptions = { handleAuthErrors: true }
+    ): Promise<Blob> {
+
+        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+            method: "GET",
+            credentials: "include",
+        });
+
+        if (!response.ok) this.handleError(response, options);
+
+        return await response.blob();
+    }
+
+    // -----------------------------------------
     // 🔹 GET (No baseUrl override anymore)
     // -----------------------------------------
     static async get<T>(

@@ -3,7 +3,10 @@
 import { useEffect, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useSessionStore } from "@/commons/store/session"
-import { listCorporateProducts, uploadStagingFile } from "@/commons/api"
+import { listCorporateProducts } from "@/commons/api"
+import { validateDraft } from "@/commons/api/modules/draft-api"
+import { uploadFile } from "@/commons/api/modules/files-api"
+import { handleDownloadSample } from "@/commons/utils/csv-utils"
 import { Card, CardContent, CardHeader, CardTitle } from "@/commons/components/ui/card"
 import { Label } from "@/commons/components/ui/label"
 import { Input } from "@/commons/components/ui/input"
@@ -33,6 +36,8 @@ export default function StagingUploadPage() {
 
     // Bulk State
     const [file, setFile] = useState<File | null>(null)
+    const [filePath, setFilePath] = useState<string | null>(null)
+    const [isUploading, setIsUploading] = useState(false)
 
     // Single State
     const [singleData, setSingleData] = useState({
@@ -73,14 +78,57 @@ export default function StagingUploadPage() {
         fetchProducts()
     }, [selectedCorporate])
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
-            setFile(e.target.files[0])
+            const selectedFile = e.target.files[0]
+            setFile(selectedFile)
+            setIsUploading(true)
+            setFilePath(null)
+
+            try {
+                const response: any = await uploadFile(selectedFile)
+                // Handle response which might be string or object with data/fileName
+                const path = response?.fileName ?? response?.data ?? response
+                setFilePath(path)
+            } catch (error) {
+                console.error("File upload failed", error)
+                toast({
+                    variant: "destructive",
+                    title: "Upload Failed",
+                    description: "Failed to upload file. Please try again."
+                })
+                setFile(null)
+            } finally {
+                setIsUploading(false)
+            }
         }
     }
 
     const handleSingleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setSingleData({ ...singleData, [e.target.name]: e.target.value })
+    }
+
+
+
+    const isFormValid = () => {
+        if (!selectedCorporate?.code || !selectedProduct || !cardType || !embossType) return false
+        if (isLoading || isUploading) return false
+
+        if (activeTab === "bulk") {
+            return !!file && !!filePath
+        } else {
+            return (
+                !!singleData.kitNumber &&
+                !!singleData.name &&
+                !!singleData.mobile &&
+                !!singleData.email &&
+                !!singleData.amount &&
+                !!singleData.addressLine1 &&
+                !!singleData.city &&
+                !!singleData.state &&
+                !!singleData.pincode
+            )
+        }
     }
 
     const handleSubmit = async () => {
@@ -103,35 +151,35 @@ export default function StagingUploadPage() {
             }
 
             if (activeTab === "bulk") {
-                if (!file) {
-                    toast({ variant: "destructive", title: "Error", description: "Please select a file to upload." })
+                if (!filePath) {
+                    toast({ variant: "destructive", title: "Error", description: "File not uploaded yet." })
                     setIsLoading(false)
                     return
                 }
 
-                // Step 1: Upload file to get path (Legacy Contract)
-                // We need to import uploadFile from files-api
-                const { uploadFile } = await import("@/commons/api/modules/files-api")
-                const fileRes = await uploadFile(file)
-                const filePath = fileRes?.fileName ?? fileRes?.data ?? fileRes
-
                 payload = {
                     ...payload,
                     filePath,
-                    isBulk: true
+                    isBulk: true,
+                    isSingle: false
                 }
             } else {
                 payload = {
                     ...payload,
                     application: singleData,
-                    isSingle: true
+                    isSingle: true,
+                    isBulk: false
                 }
             }
 
-            // Step 2: Send JSON payload to Staging API
-            const response: any = await uploadStagingFile(payload)
-            const stagingBatchId = response.stagingBatchId || response.id || response;
-            navigate(`/applications/staging/${stagingBatchId}`)
+            // Step 2: Create Draft & Trigger Validation
+            console.log("Calling validateDraft with payload:", payload)
+            const response: any = await validateDraft(payload)
+            console.log("validateDraft response:", response)
+            const draftId = response.draftId || response.stagingBatchId || response.id
+
+            // Step 3: Navigate to Status Page
+            navigate(`/applications/staging/${draftId}`)
         } catch (error: any) {
             console.error("Upload failed", error)
             const { fieldErrors, pageError } = mapApiErrors(error)
@@ -198,8 +246,8 @@ export default function StagingUploadPage() {
                                     <Label htmlFor="virtual">Virtual</Label>
                                 </div>
                                 <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="PHYSICAL" id="physical" />
-                                    <Label htmlFor="physical">Physical</Label>
+                                    <RadioGroupItem value="PHYSICAL" id="physical" disabled />
+                                    <Label htmlFor="physical" className="text-muted-foreground">Physical</Label>
                                 </div>
                             </RadioGroup>
                         </div>
@@ -211,20 +259,20 @@ export default function StagingUploadPage() {
                                     <Label htmlFor="perso">Perso</Label>
                                 </div>
                                 <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="NON_PERSONALIZED" id="non-perso" />
-                                    <Label htmlFor="non-perso">Non Perso</Label>
+                                    <RadioGroupItem value="NON_PERSONALIZED" id="non-perso" disabled />
+                                    <Label htmlFor="non-perso" className="text-muted-foreground">Non Perso</Label>
                                 </div>
                             </RadioGroup>
                         </div>
                     </div>
 
-                    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                        <TabsList className="grid w-full grid-cols-2">
-                            <TabsTrigger value="bulk">Bulk Upload</TabsTrigger>
-                            <TabsTrigger value="single">Single Entry</TabsTrigger>
+                    <Tabs value={activeTab} onValueChange={setActiveTab}>
+                        <TabsList className="w-auto justify-start mb-4">
+                            <TabsTrigger value="bulk">Bulk</TabsTrigger>
+                            <TabsTrigger value="single">Single</TabsTrigger>
                         </TabsList>
 
-                        <TabsContent value="bulk" className="space-y-4 mt-4">
+                        <TabsContent value="bulk" className="space-y-4">
                             <div className="border-2 border-dashed rounded-lg p-10 flex flex-col items-center justify-center text-center relative hover:bg-muted/50 transition-colors">
                                 {file ? (
                                     <div className="flex items-center gap-4">
@@ -233,7 +281,7 @@ export default function StagingUploadPage() {
                                             <p className="font-medium">{file.name}</p>
                                             <p className="text-sm text-muted-foreground">{(file.size / 1024).toFixed(2)} KB</p>
                                         </div>
-                                        <Button variant="ghost" size="icon" onClick={() => setFile(null)}>
+                                        <Button variant="ghost" size="icon" onClick={() => { setFile(null); setFilePath(null); }}>
                                             <X className="h-4 w-4" />
                                         </Button>
                                     </div>
@@ -254,6 +302,7 @@ export default function StagingUploadPage() {
                                     disabled={!!file}
                                 />
                             </div>
+
                         </TabsContent>
 
                         <TabsContent value="single" className="space-y-4 mt-4">
@@ -323,13 +372,18 @@ export default function StagingUploadPage() {
                         </TabsContent>
                     </Tabs>
 
-                    <div className="flex justify-end pt-4">
-                        <ButtonLoader onClick={handleSubmit} isLoading={isLoading} loadingText="Uploading...">
-                            Proceed to Validation
+                    <div className="flex justify-between items-center pt-4 border-t">
+                        {activeTab === "bulk" ? (
+                            <Button variant="link" onClick={handleDownloadSample} className="text-sm text-muted-foreground hover:text-primary px-0">
+                                Download Sample CSV
+                            </Button>
+                        ) : <div></div>}
+                        <ButtonLoader onClick={handleSubmit} isLoading={isLoading} loadingText="Processing..." disabled={!isFormValid()}>
+                            Upload and Validate
                         </ButtonLoader>
                     </div>
                 </CardContent>
             </Card>
-        </div>
+        </div >
     )
 }

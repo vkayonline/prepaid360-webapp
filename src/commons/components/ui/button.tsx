@@ -43,19 +43,42 @@ function Button({
   variant,
   size,
   asChild = false,
+  loading = false,
+  children,
+  disabled,
   ...props
 }: React.ComponentProps<"button"> &
   VariantProps<typeof buttonVariants> & {
     asChild?: boolean
+    loading?: boolean
   }) {
   const Comp = asChild ? Slot : "button"
 
   return (
     <Comp
       data-slot="button"
-      className={cn(buttonVariants({ variant, size, className }))}
+      className={cn(buttonVariants({ variant, size, className }), loading && "relative")}
+      disabled={disabled || loading}
+      aria-busy={loading ? "true" : undefined}
       {...props}
-    />
+    >
+      {loading ? (
+        <>
+          <span className="absolute inset-0 flex items-center justify-center">
+            <span className="flex items-center gap-1">
+              <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse duration-700" style={{ animationDelay: "0ms" }} />
+              <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse duration-700" style={{ animationDelay: "150ms" }} />
+              <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse duration-700" style={{ animationDelay: "300ms" }} />
+            </span>
+          </span>
+          <span className="opacity-0 flex items-center justify-center gap-2">
+            {children}
+          </span>
+        </>
+      ) : (
+        children
+      )}
+    </Comp>
   )
 }
 

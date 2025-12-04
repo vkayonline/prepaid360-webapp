@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useRef } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import { getStagingStatus, downloadStagingErrors, submitStagingBatch } from "@/commons/api"
+import { getDraftStatus, downloadDraftErrors, submitDraft } from "@/commons/api/modules/draft-api"
+import { downloadFile } from "@/commons/api/modules/files-api"
 import { Card, CardContent, CardHeader, CardTitle } from "@/commons/components/ui/card"
 import { Button } from "@/commons/components/ui/button"
 import { Badge } from "@/commons/components/ui/badge"
@@ -23,17 +24,11 @@ export default function StagingStatusPage() {
         if (!stagingBatchId) return
 
         try {
-            const data: any = await getStagingStatus(stagingBatchId)
-
-            // Check if component is still mounted before updating state
-            // We can infer this if pollingRef.current is null (cleaned up) 
-            // BUT a better way is a dedicated isMounted ref if we want to be strict.
-            // For now, let's just check if pollingRef is active OR if it's the initial load (isLoading=true)
-
+            const data: any = await getDraftStatus(Number(stagingBatchId))
             setStatusData(data)
 
             // Stop polling if validation is complete or failed
-            if (data.status === "VALIDATED" || data.status === "FAILED" || data.status === "COMPLETED") {
+            if (data.status === "VALIDATED" || data.status === "FAILED") {
                 if (pollingRef.current) {
                     clearInterval(pollingRef.current)
                     pollingRef.current = null
@@ -42,7 +37,6 @@ export default function StagingStatusPage() {
             }
         } catch (error) {
             console.error("Failed to fetch status", error)
-            // Don't stop polling immediately on error, might be transient
         }
     }
 
@@ -58,19 +52,35 @@ export default function StagingStatusPage() {
     const handleDownloadErrors = async () => {
         if (!stagingBatchId) return
         try {
-            const response: any = await downloadStagingErrors(stagingBatchId)
-            // Assuming response is a blob or download link. 
-            // If it's a link in 'url' property:
-            if (response.url) {
-                window.open(response.url, "_blank")
-            } else {
-                // If it's a blob, we need to handle it. 
-                // BaseClient usually returns JSON data. 
-                // If the API returns a file directly, BaseClient might need adjustment or we use the URL.
-                // Let's assume it returns a URL for now based on typical patterns.
-                toast({ title: "Download started", description: "Error file download has started." })
+            // Step 1: Get the error file path
+            const response: any = await downloadDraftErrors(Number(stagingBatchId))
+            const filePath = response.filePath
+
+            if (!filePath) {
+                throw new Error("No error file path returned.")
             }
+
+            // Extract filename from path (assuming path is like /uploads/errors/filename.csv or just filename)
+            const fileName = filePath.split('/').pop() || filePath
+
+            // Step 2: Download the file blob
+            const blob = await downloadFile(fileName)
+
+            // Create a link element and trigger download
+            const url = window.URL.createObjectURL(blob as Blob)
+            const link = document.createElement("a")
+            link.href = url
+            link.setAttribute("download", fileName)
+            document.body.appendChild(link)
+            link.click()
+
+            // Clean up
+            link.parentNode?.removeChild(link)
+            window.URL.revokeObjectURL(url)
+
+            toast({ title: "Download started", description: "Error file download has started." })
         } catch (error) {
+            console.error("Download error:", error)
             toast({ variant: "destructive", title: "Download Failed", description: "Could not download error file." })
         }
     }
@@ -79,7 +89,7 @@ export default function StagingStatusPage() {
         if (!stagingBatchId) return
         setIsSubmitting(true)
         try {
-            await submitStagingBatch(stagingBatchId)
+            await submitDraft(Number(stagingBatchId))
             toast({ title: "Success", description: "Batch submitted successfully." })
             navigate("/applications")
         } catch (error: any) {
@@ -157,7 +167,7 @@ export default function StagingStatusPage() {
                             )}
 
                             <div className="flex justify-end gap-4 pt-4 border-t">
-                                <Button variant="outline" onClick={() => navigate("/applications/create-new")}>
+                                <Button variant="outline" onClick={() => navigate("/applications/create")}>
                                     Start Over
                                 </Button>
                                 <Button

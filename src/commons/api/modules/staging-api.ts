@@ -11,3 +11,6 @@ export const downloadStagingErrors = (stagingBatchId: string) =>
 
 export const submitStagingBatch = (stagingBatchId: string) =>
     BaseClient.post("/v1/applications/submit", { stagingBatchId });
+
+export const validateStagingBatch = (stagingBatchId: string) =>
+    BaseClient.post("/v1/applications/validate", { stagingBatchId });

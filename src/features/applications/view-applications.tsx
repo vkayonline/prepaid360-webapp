@@ -3,31 +3,29 @@
 import { useState, useEffect } from "react"
 import { Link } from "react-router-dom"
 import { Button } from "@/commons/components/ui/button"
-import { Card, CardContent } from "@/commons/components/ui/card"
+import { Card, CardContent, CardHeader } from "@/commons/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/commons/components/ui/table"
 import { Badge } from "@/commons/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/commons/components/ui/tabs"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/commons/components/ui/select"
+import { ApplicationsTabs } from "./components/applications-tabs"
+import { DraftsList } from "./components/drafts-list"
 import { ChevronLeft, ChevronRight, PlusCircle } from "lucide-react"
 import { Skeleton } from "@/commons/components/ui/skeleton"
 import { listApplicationBatches } from "@/commons/api"
 
-const statusVariantMap: { [key: string]: "default" | "secondary" | "destructive" | "outline" | "success" | "warning" } = {
-  "APPROVED": "success",
-  "PENDING_APPROVAL": "warning",
+const statusVariantMap: { [key: string]: "default" | "secondary" | "destructive" | "outline" } = {
+  "APPROVED": "default",
+  "PENDING_APPROVAL": "secondary",
   "ISSUANCE_IN_PROGRESS": "outline",
   "PARTIALLY_ISSUED": "outline",
-  "ISSUED": "success",
+  "ISSUED": "default",
   "ISSUANCE_FAILED": "destructive",
   "REJECTED": "destructive",
   "CANCELED": "destructive",
-  "PENDING": "warning",
+  "PENDING": "secondary",
 };
 
-const statusFilterMap: { [key: string]: string } = {
-  PENDING: "PENDING_APPROVAL",
-  APPROVED: "APPROVED,ISSUANCE_IN_PROGRESS,PARTIALLY_ISSUED,ISSUED,ISSUANCE_FAILED",
-  REJECTED: "REJECTED,CANCELED",
-};
+
 
 function ApplicationsTable({ applications, isLoading, pagination }: { applications: any[], isLoading: boolean, pagination: any }) {
   if (isLoading) {
@@ -101,7 +99,8 @@ function ApplicationsTable({ applications, isLoading, pagination }: { applicatio
 }
 
 export default function ViewApplicationsPage() {
-  const [activeTab, setActiveTab] = useState("PENDING")
+  const [activeTab, setActiveTab] = useState<"submitted" | "drafts">("submitted")
+  const [filter, setFilter] = useState("ALL")
   const [applications, setApplications] = useState([])
   const [pagination, setPagination] = useState<any>({})
   const [isLoading, setIsLoading] = useState(true)
@@ -110,7 +109,9 @@ export default function ViewApplicationsPage() {
     const fetchApplications = async (status: string, page = 0, size = 10) => {
       setIsLoading(true)
       try {
-        const data = await listApplicationBatches(status, page, size);
+        // Pass undefined for "ALL" to fetch all statuses
+        const statusParam = status === "ALL" ? undefined : status;
+        const data: any = await listApplicationBatches(statusParam, page, size);
         setApplications(data.content)
         setPagination({
           ...data.pageable,
@@ -129,17 +130,16 @@ export default function ViewApplicationsPage() {
       }
     }
 
-    const statusQuery = statusFilterMap[activeTab];
-    fetchApplications(statusQuery)
-  }, [activeTab])
+    fetchApplications(filter)
+  }, [filter])
 
   return (
     <div className="space-y-6">
       {/* Header Section */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Application History</h1>
-          <p className="text-muted-foreground">Track and manage all submitted applications.</p>
+          <h1 className="text-3xl font-bold">Applications</h1>
+          <p className="text-muted-foreground">Manage your drafts and submitted applications.</p>
         </div>
         <Button asChild>
           <Link to="/applications/create">
@@ -149,36 +149,35 @@ export default function ViewApplicationsPage() {
         </Button>
       </div>
 
-      {/* Tabs for Statuses */}
-      <Tabs defaultValue={activeTab} onValueChange={(value) => setActiveTab(value)}>
-        <TabsList className="grid w-fit grid-cols-3">
-          <TabsTrigger value="PENDING">Pending</TabsTrigger>
-          <TabsTrigger value="APPROVED">Approved</TabsTrigger>
-          <TabsTrigger value="REJECTED">Rejected</TabsTrigger>
-        </TabsList>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <ApplicationsTabs activeTab={activeTab} onTabChange={setActiveTab} />
+          {activeTab === "submitted" && (
+            <div className="flex justify-end">
+              <Select value={filter} onValueChange={setFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">All Applications</SelectItem>
+                  <SelectItem value="PENDING_APPROVAL">Pending Approval</SelectItem>
+                  <SelectItem value="APPROVED">Approved</SelectItem>
+                  <SelectItem value="REJECTED">Rejected</SelectItem>
+                  <SelectItem value="ISSUED">Issued</SelectItem>
+                  <SelectItem value="ISSUANCE_FAILED">Failed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+        </CardHeader>
+        <CardContent className="pt-6">
+          {activeTab === "submitted" && (
+            <ApplicationsTable applications={applications} isLoading={isLoading} pagination={pagination} />
+          )}
 
-        <TabsContent value="PENDING">
-          <Card>
-            <CardContent className="pt-6">
-              <ApplicationsTable applications={applications} isLoading={isLoading} pagination={pagination} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="APPROVED">
-          <Card>
-            <CardContent className="pt-6">
-              <ApplicationsTable applications={applications} isLoading={isLoading} pagination={pagination} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="REJECTED">
-          <Card>
-            <CardContent className="pt-6">
-              <ApplicationsTable applications={applications} isLoading={isLoading} pagination={pagination} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+          {activeTab === "drafts" && <DraftsList />}
+        </CardContent>
+      </Card>
     </div>
   )
 }
